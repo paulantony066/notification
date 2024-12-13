@@ -30,7 +30,7 @@ app.use(
 );
 
 app.use(function(req, res, next){
-    res,setHeader("Content_Type","application/json");
+    res,setHeader("Content-Type","application/json");
     next();
 });
 
