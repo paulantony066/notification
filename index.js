@@ -1,74 +1,72 @@
-/**import admin from "firebase-admin";
-
-var serviceAccount = require("path/to/serviceAccountKey.json");
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
-
-$env:GOOGLE_APPLICATION_CREDENTIALS="C:\Users\raphyantony\notify\familyevent-934de-firebase-adminsdk-vmndn-187065aab1.json"**/
-
-import {initializeApp, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, applicationDefault } from "firebase-admin/app";
 import { getMessaging } from "firebase-admin/messaging";
-import express, { json } from "express";
+import express from "express";
 import cors from "cors";
 
 process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
 const app = express();
 app.use(express.json());
 
+// Enable CORS
 app.use(
-    cors({
-        origin: "*",
-    })
+  cors({
+    origin: "*", // Allow all origins
+    methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"], // Allowed methods
+  })
 );
 
-app.use(
-    cors({
-        methods: ["GET", "POST", "DELETE", "UPDATE", "PUT", "PATCH"],
-    })
-);
-
-app.use(function(req, res, next){
-    res.setHeader("Content-Type","application/json");
-    next();
+// Middleware to set headers
+app.use(function (req, res, next) {
+  res.setHeader("Content-Type", "application/json");
+  next();
 });
 
-
+// Initialize Firebase Admin SDK
 initializeApp({
-    Credential: applicationDefault(),
-    projectId: 'familyevent-934de',
+  credential: applicationDefault(),
+  projectId: "familyevent-934de",
 });
 
-app.post("/send", function(req, res){
+// Endpoint to send FCM notification
+app.post("/send", function (req, res) {
+  const receivedToken = req.body.fcmToken;
 
-    const recievedToken = req.body.fcmToken;
-    const message = {
-        notification: {
-          title: 'notify',
-          body: 'testttttt'
-        },
-        token: recievedToken
-    };
+  // Validate if fcmToken is provided
+  if (!receivedToken) {
+    return res.status(400).json({
+      error: "fcmToken is required in the request body",
+    });
+  }
 
-    getMessaging()
-        .send(message)
-        .then((response)=>{
-            res.status(200).json({
-                message: "successs",
-                token: recievedToken,
-            });
-            console.log("message sent success:", response);
-        })
-        .catch((error)=>{
-            res.status(400);
-            res.send(error);
-            console.log("error sending message:", error);
-        });
+  const message = {
+    notification: {
+      title: "Notification",
+      body: "This is a test notification",
+    },
+    token: receivedToken,
+  };
 
-
+  // Send FCM notification
+  getMessaging()
+    .send(message)
+    .then((response) => {
+      res.status(200).json({
+        message: "Notification sent successfully",
+        token: receivedToken,
+      });
+      console.log("Message sent successfully:", response);
+    })
+    .catch((error) => {
+      res.status(500).json({
+        error: "Failed to send notification",
+        details: error.message,
+      });
+      console.error("Error sending message:", error);
+    });
 });
 
-app.listen(3000, function(){
-    console.log("server started on 3000");
-})
+// Start the server
+app.listen(3000, function () {
+  console.log("Server started on port 3000");
+});
